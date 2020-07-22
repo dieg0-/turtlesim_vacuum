@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="turtlesim" type="turtlesim_node" name="turtlesim_node" />
+    <node pkg="turtlesim_vacuum" type="robot_vacuum.py" name="roomba" output="screen" />
+</launch>
