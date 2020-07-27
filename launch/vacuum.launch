@@ -1,4 +1,19 @@
 <launch>
+    <!-- Arguments -->
+    <arg name="goal_tolerance" default="0.1" />
+    <arg name="linear_velocity_factor_to_goal" default="1.5" />
+    <arg name="angular_velocity_factor_to_goal" default="4.0" />
+
+    <arg name="spiral_velocity" default="4.0" />
+
+    <!-- Start the Turtle-Simulator -->
     <node pkg="turtlesim" type="turtlesim_node" name="turtlesim_node" />
-    <node pkg="turtlesim_vacuum" type="robot_vacuum.py" name="roomba" output="screen" />
+
+    <!-- Start the Vacuum Simulator -->
+    <node pkg="turtlesim_vacuum" type="robot_vacuum.py" name="roomba" output="screen" >
+        <param name="goal_tolerance" value="$(arg goal_tolerance)" />
+        <param name="linear_velocity_factor" value="$(arg linear_velocity_factor_to_goal)" />
+        <param name="angular_velocity_factor" value="$(arg angular_velocity_factor_to_goal)" />
+        <param name="spiral_velocity" value="$(arg spiral_velocity)" />
+    </node>
 </launch>

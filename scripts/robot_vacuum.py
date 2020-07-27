@@ -73,9 +73,12 @@ class RobotCleaner:
         velocity_msg = Twist()
         loop_rate = rospy.Rate(10)
 
+        linear_velocity_factor = rospy.get_param("~linear_velocity_factor")
+        angular_velocity_factor = rospy.get_param("~angular_velocity_factor")
+
         while(distance(self._current_pose, goal_pose) > distance_tolerance):
-            velocity_msg.linear.x = 1.5 * distance(self._current_pose, goal_pose)
-            velocity_msg.angular.z = 4 * (math.atan2(goal_pose.y - self._current_pose.y, goal_pose.x - self._current_pose.x) - self._current_pose.theta)
+            velocity_msg.linear.x = linear_velocity_factor * distance(self._current_pose, goal_pose)
+            velocity_msg.angular.z = angular_velocity_factor * (math.atan2(goal_pose.y - self._current_pose.y, goal_pose.x - self._current_pose.x) - self._current_pose.theta)
 
             self._velocity_publisher.publish(velocity_msg)
             loop_rate.sleep()
@@ -98,7 +101,7 @@ class RobotCleaner:
         goal_pose.x = 1.0 
         goal_pose.y = 1.0
         goal_pose.theta = 0.0
-        self.move_to_goal(goal_pose, distance_tolerance=0.01)
+        self.move_to_goal(goal_pose, distance_tolerance=rospy.get_param("~goal_tolerance"))
         loop_rate.sleep()
         self.set_orientation(0.0)
         loop_rate.sleep()
@@ -126,7 +129,7 @@ class RobotCleaner:
         velocity_msg = Twist()
         count = 0.0
     
-        constant_speed = 4.0
+        constant_speed = rospy.get_param("~spiral_velocity")
         vk = 1.0
         wk = 1.0
         rk = 0.5
@@ -134,7 +137,16 @@ class RobotCleaner:
 
         while(self._current_pose.x < 10.5 and self._current_pose.y < 10.5):
             rk = rk + 0.5
-            velocity_msg.linear.x = rk
+            '''
+              The radius of a circle is characterized by the linear velocity: 
+                
+                radius = linear_vel / angular_vel
+              
+              - If the linear velocity is constant: we have a circle with a constant radius
+              - If the lienar velocity increases, the radius of the circle increases
+              --> Increase the velocity to increase the radius in each iteration.
+            '''
+            velocity_msg.linear.x = rk 
             velocity_msg.angular.z = constant_speed
 
             self._velocity_publisher.publish(velocity_msg)
