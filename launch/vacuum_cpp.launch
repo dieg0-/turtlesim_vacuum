@@ -1,0 +1,8 @@
+<launch>
+    <!-- Start the Turtle-Simulator -->
+    <node pkg="turtlesim" type="turtlesim_node" name="turtlesim_node" />
+
+    <!-- Start the Vacuum Simulator -->
+    <node pkg="turtlesim_vacuum" type="turtlesim_cleaner_node" name="roomba" output="screen" >
+    </node>
+</launch>
