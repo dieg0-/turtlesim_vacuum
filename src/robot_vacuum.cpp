@@ -1,6 +1,7 @@
 #include "geometry_msgs/Twist.h"
 #include <math.h>
 #include "ros/ros.h"
+#include <tuple>
 #include "turtlesim/Pose.h"
 
 double degrees2radians(double angle_in_degrees);
@@ -10,6 +11,8 @@ double euclidean_distance(double x1, double y1, double x2, double y2);
 class RobotCleaner{
     public:
         turtlesim::Pose turtlesim_pose;
+        std::tuple<float, float> x_limits = std::make_tuple(0.0, 11.0);
+        std::tuple<float, float> y_limits = std::make_tuple(0.0, 11.0);
 
         void init_communication(){
             velocity_publisher_ = node_handle_.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10);
@@ -126,6 +129,38 @@ class RobotCleaner{
             rotate(abs(relative_angle_radians), abs(relative_angle_radians), clockwise);
         }
 
+        void grid_clean(){
+            ros::Rate loop(0.5);
+            turtlesim::Pose initial_pose;
+            initial_pose.x = 1;
+            initial_pose.y = 1;
+            initial_pose.theta = 0;
+            move_to_goal(initial_pose, 0.01);
+            loop.sleep();
+            set_orientation(0);
+            loop.sleep();
+
+            move(2.0, 9.0, true);
+            loop.sleep();
+            rotate(degrees2radians(10), degrees2radians(90), false);
+            loop.sleep();
+
+            while(turtlesim_pose.x > std::get<0>(x_limits) + 2){
+                move(2.0, 9.0, true);
+                rotate(degrees2radians(10), degrees2radians(90), false);
+                loop.sleep();
+                move(2.0, 1.0, true);
+                rotate(degrees2radians(10), degrees2radians(90), false);
+                loop.sleep();
+                move(2.0, 9.0, true);
+                rotate(degrees2radians(30), degrees2radians(90), true);
+                loop.sleep();
+                move(2.0, 1.0, true);
+                rotate(degrees2radians(30), degrees2radians(90), true);
+                loop.sleep();
+            }
+        }
+
         void spiral_clean(){
             geometry_msgs::Twist velocity_msg;
             double count = 0.0;
@@ -186,6 +221,7 @@ int main(int argc, char** argv){
     RobotCleaner cleaner;
     cleaner.init_communication();
     cleaner.spiral_clean();
+    // cleaner.grid_clean();
 
     ros::spin();
 
