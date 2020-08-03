@@ -15,6 +15,7 @@ class RobotCleaner{
         std::tuple<float, float> y_limits = std::make_tuple(0.0, 11.0);
 
         void init_communication(){
+            private_node_handle_ = ros::NodeHandle("~");
             velocity_publisher_ = node_handle_.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10);
             pose_subscriber_ = node_handle_.subscribe("/turtle1/pose", 10, &RobotCleaner::pose_clbk, this);
         }
@@ -99,15 +100,19 @@ class RobotCleaner{
             geometry_msgs::Twist velocity_msg;
             ros::Rate loop_rate(10);
 
+            double linear_velocity_factor, angular_velocity_factor;
+            private_node_handle_.getParam("linear_velocity_factor", linear_velocity_factor);
+            private_node_handle_.getParam("angular_velocity_factor", angular_velocity_factor);
+
             do{
                 // Tends to 0 as the robot approaches the goal
-                velocity_msg.linear.x = 1.5 * euclidean_distance(turtlesim_pose.x, turtlesim_pose.y, goal_pose.x, goal_pose.y);
+                velocity_msg.linear.x = linear_velocity_factor * euclidean_distance(turtlesim_pose.x, turtlesim_pose.y, goal_pose.x, goal_pose.y);
                 velocity_msg.linear.y = 0.0;
                 velocity_msg.linear.z = 0.0;
 
                 velocity_msg.angular.x = 0.0;
                 velocity_msg.angular.y = 0.0;
-                velocity_msg.angular.z = 4 * (atan2(goal_pose.y - turtlesim_pose.y, goal_pose.x - turtlesim_pose.x) - turtlesim_pose.theta);
+                velocity_msg.angular.z = angular_velocity_factor * (atan2(goal_pose.y - turtlesim_pose.y, goal_pose.x - turtlesim_pose.x) - turtlesim_pose.theta);
 
                 velocity_publisher_.publish(velocity_msg);
 
@@ -131,11 +136,14 @@ class RobotCleaner{
 
         void grid_clean(){
             ros::Rate loop(0.5);
+            double goal_tolerance;
+            private_node_handle_.getParam("goal_tolerance", goal_tolerance);
+
             turtlesim::Pose initial_pose;
             initial_pose.x = 1;
             initial_pose.y = 1;
             initial_pose.theta = 0;
-            move_to_goal(initial_pose, 0.01);
+            move_to_goal(initial_pose, goal_tolerance);
             loop.sleep();
             set_orientation(0);
             loop.sleep();
@@ -164,8 +172,9 @@ class RobotCleaner{
         void spiral_clean(){
             geometry_msgs::Twist velocity_msg;
             double count = 0.0;
+            double constant_speed;
+            private_node_handle_.getParam("spiral_velocity", constant_speed);
 
-            double constant_speed = 4.0;
             double vk = 1.0;
             double wk = 2.0;
             double rk = 0.5;
@@ -197,6 +206,7 @@ class RobotCleaner{
 
     private:
         ros::NodeHandle node_handle_;
+        ros::NodeHandle private_node_handle_;
         ros::Publisher velocity_publisher_;
         ros::Subscriber pose_subscriber_;
 };
